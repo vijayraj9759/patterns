@@ -1,0 +1,113 @@
+const r = require("raylib");
+
+function degreeToRadian(degree) {
+    return (Math.PI / 180) * degree;
+}
+
+function setup() {
+    const width = 1000;
+    const height = 1000;
+    const windowTitle = "square";
+    const fps = 40;
+
+    r.InitWindow(width, height, windowTitle);
+    r.SetTargetFPS(fps);
+
+    return {
+        screen: { width, height },
+    };
+}
+
+function draw(world) {
+    const target = world.target;
+
+    r.DrawTexture(target.texture, 0, 0, r.WHITE);
+}
+
+function drawSquareOutline(coordinates) {
+    const colorPalatte = {
+        0: r.WHITE,
+        1: r.GOLD,
+    };
+    const size = coordinates.length;
+    for (let i = 0; i < size; i++) {
+        r.DrawLineV(
+            coordinates[i],
+            coordinates[(i + 1) % size],
+            colorPalatte[i % 2],
+        );
+    }
+}
+
+function generatePolarCoordinates(radius, angle) {
+    const x = radius * Math.cos(degreeToRadian(angle));
+    const y = radius * Math.sin(degreeToRadian(angle));
+
+    return { x, y };
+}
+
+function translateCoordinates(coordinates, offset) {
+    return r.Vector2Add(coordinates, offset);
+}
+
+function generateSquareCoordinates(center, diagonalLength, angle) {
+    const coordinates = [];
+
+    for (let i = 0; i < 4; i++) {
+        const vertexAngle = i * 90 + angle;
+        const polarCoordinates = generatePolarCoordinates(
+            diagonalLength,
+            vertexAngle,
+        );
+
+        const vertexCoordinates = translateCoordinates(
+            center,
+            polarCoordinates,
+        );
+        coordinates.push(vertexCoordinates);
+    }
+
+    return coordinates;
+}
+
+function loop(world) {
+    const target = r.LoadRenderTexture(1000, 1000);
+    world.target = target;
+    world.cf = 0;
+
+    while (!r.WindowShouldClose()) {
+        r.BeginTextureMode(target);
+        const radius = 500 - (world.cf / 100) * 500;
+        const angle = world.cf;
+
+        // const angle = Math.random() * 360;
+        // const radius = Math.random() * 500;
+        const coordinates = generateSquareCoordinates(
+            { x: 500, y: 500 },
+            radius,
+            angle,
+        );
+
+        drawSquareOutline(coordinates);
+
+        r.EndTextureMode();
+
+        r.BeginDrawing();
+        draw(world);
+        r.EndDrawing();
+
+        world.cf = world.cf >= 500 ? 500 : world.cf + 1;
+    }
+}
+
+function teardown() {
+    r.CloseWindow();
+}
+
+function main() {
+    const world = setup();
+    loop(world);
+    teardown();
+}
+
+main();
